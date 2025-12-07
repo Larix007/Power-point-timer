@@ -76,6 +76,8 @@ const App = () => {
       timerRef.current = window.setInterval(() => {
         setState(prev => {
           if (!prev.startTime) return prev;
+          if (slides.length === 0) return prev;
+
           const now = Date.now();
           const elapsedMS = now - prev.startTime - prev.totalPausedTime;
           const elapsedSec = elapsedMS / 1000;

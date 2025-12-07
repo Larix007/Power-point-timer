@@ -58,6 +58,7 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
   };
 
   const removeSlide = (id: string) => {
+    if (slides.length <= 1) return; // Prevent deleting the last slide
     const newSlides = slides.filter(s => s.id !== id).map((s, idx) => ({...s, number: idx + 1}));
     setSlides(newSlides);
   };
@@ -178,7 +179,12 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
                      />
                    </div>
                    <div className="w-10 flex justify-end">
-                     <button onClick={() => removeSlide(slide.id)} className="text-slate-600 hover:text-red-400 transition-colors">
+                     <button 
+                       onClick={() => removeSlide(slide.id)} 
+                       className={`transition-colors ${slides.length <= 1 ? 'text-slate-800 cursor-not-allowed' : 'text-slate-600 hover:text-red-400'}`}
+                       disabled={slides.length <= 1}
+                       title={slides.length <= 1 ? "Impossible de supprimer la dernière diapositive" : "Supprimer"}
+                     >
                        <Trash2 className="w-4 h-4" />
                      </button>
                    </div>
@@ -197,7 +203,8 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
         <div className="flex justify-center">
            <button 
              onClick={() => onStart(slides, autoAdvance)}
-             className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white text-lg font-bold rounded-full shadow-lg shadow-green-900/20 hover:shadow-green-900/40 transform hover:scale-105 transition-all flex items-center gap-3"
+             disabled={slides.length === 0}
+             className="px-12 py-4 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white text-lg font-bold rounded-full shadow-lg shadow-green-900/20 hover:shadow-green-900/40 transform hover:scale-105 transition-all flex items-center gap-3"
            >
              <Play className="w-6 h-6 fill-current" />
              Lancer la Présentation

@@ -27,13 +27,20 @@ const RunningView: React.FC<RunningViewProps> = ({
   const currentSlide = slides[currentSlideIndex];
   
   // Calculate Totals
-  const totalDuration = useMemo(() => slides.reduce((acc, s) => acc + s.durationSeconds, 0), [slides]);
+  const totalDuration = useMemo(() => slides.reduce((acc, s) => acc + (s?.durationSeconds || 0), 0), [slides]);
   
   // Calculate Planned Timing for Current Slide
   const plannedEndTimeForCurrentSlide = useMemo(() => {
+    if (!slides || slides.length === 0) return 0;
+    
     let duration = 0;
-    for (let i = 0; i <= currentSlideIndex; i++) {
-      duration += slides[i].durationSeconds;
+    // Ensure we don't access out of bounds if index is invalid
+    const safeIndex = Math.min(currentSlideIndex, slides.length - 1);
+    
+    for (let i = 0; i <= safeIndex; i++) {
+      if (slides[i]) {
+        duration += slides[i].durationSeconds;
+      }
     }
     return duration;
   }, [slides, currentSlideIndex]);
@@ -43,6 +50,8 @@ const RunningView: React.FC<RunningViewProps> = ({
   
   // Drift Calculation (Avance / Retard)
   const idealSlideInfo = useMemo(() => {
+    if (!slides || slides.length === 0) return { index: 0, number: 1 };
+    
     let accumulated = 0;
     for (let i = 0; i < slides.length; i++) {
       accumulated += slides[i].durationSeconds;
@@ -53,12 +62,21 @@ const RunningView: React.FC<RunningViewProps> = ({
     return { index: slides.length - 1, number: slides.length };
   }, [slides, elapsedGlobalTime]);
 
+  if (!currentSlide) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-slate-950 text-slate-400 flex-col gap-4">
+            <AlertCircle className="w-12 h-12 text-red-500" />
+            <p>Erreur: Aucune diapositive active ou liste vide.</p>
+            <button onClick={onStop} className="px-4 py-2 bg-slate-800 rounded hover:bg-slate-700">Retour</button>
+        </div>
+      );
+  }
+
   // If in Auto Mode, we are technically always "on time" regarding the slide displayed,
   // but the user wants to see the "Theoretical" state. 
   // In Auto Mode, the displayed slide IS the theoretical slide.
   
-  const timeDrift = 0; // In auto mode drift is irrelevant as we force the schedule
-  const isLate = slideRemainingSeconds < 0; // Should rarely happen in auto unless we overshoot total time
+  const isLate = slideRemainingSeconds < 0; 
   
   return (
     <div className="flex flex-col h-screen p-4 md:p-6 max-w-7xl mx-auto">
