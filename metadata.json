@@ -1,0 +1,5 @@
+{
+  "name": "ChronoSlide",
+  "description": "Un assistant de gestion du temps pour les présentateurs. Planifiez vos diapositives, suivez votre temps en temps réel et visualisez votre avance ou votre retard.",
+  "requestFramePermissions": []
+}
