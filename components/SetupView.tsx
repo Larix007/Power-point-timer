@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { Slide } from '../types';
-import { Trash2, Wand2, Play, RefreshCw, Clock, Plus } from 'lucide-react';
-import { generateSlidePlan } from '../services/geminiService';
+import { Trash2, Play, RefreshCw, Clock, Plus, Zap } from 'lucide-react';
 
 interface SetupViewProps {
   initialSlides: Slide[];
-  onStart: (slides: Slide[]) => void;
+  onStart: (slides: Slide[], autoAdvance: boolean) => void;
 }
 
 const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
   const [slides, setSlides] = useState<Slide[]>(initialSlides);
   const [totalTimeMin, setTotalTimeMin] = useState(20);
-  const [topic, setTopic] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(false);
 
   // Recalculate if user changes total time in basic mode
   const distributeTimeEvenly = () => {
@@ -55,23 +53,6 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
     setSlides(newSlides);
   };
 
-  const handleGenerateAI = async () => {
-    if (!topic) return;
-    setIsGenerating(true);
-    const plan = await generateSlidePlan(topic, slides.length, totalTimeMin);
-    setIsGenerating(false);
-
-    if (plan && plan.slides) {
-      const newSlides = plan.slides.map((s, idx) => ({
-        id: crypto.randomUUID(),
-        number: idx + 1,
-        title: s.title,
-        durationSeconds: s.durationSeconds
-      }));
-      setSlides(newSlides);
-    }
-  };
-
   const updateSlide = (id: string, field: keyof Slide, value: any) => {
     setSlides(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
@@ -90,7 +71,7 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
   const currentTotalMin = (currentTotalSeconds / 60).toFixed(1);
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-6 min-h-screen flex flex-col">
+    <div className="w-full max-w-4xl mx-auto p-6 min-h-screen flex flex-col">
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-2">
           ChronoSlide
@@ -101,72 +82,64 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
       <div className="bg-slate-900 rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-800 flex-grow">
         
         {/* Top Controls */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Left Column: Basic Settings */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-400" /> Paramètres Généraux
+        <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 mb-8">
+            <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2 mb-6">
+              <Clock className="w-5 h-5 text-blue-400" /> Configuration de la séance
             </h2>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Durée (min)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Durée totale (min)</label>
                 <input 
                   type="number" 
                   value={totalTimeMin} 
                   onChange={handleTotalTimeChange}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-xl font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xl font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Diapositives</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Nombre de diapositives</label>
                 <div className="flex items-center">
                   <input 
                     type="number"
                     value={slides.length}
                     readOnly
-                    className="w-full bg-slate-800 border border-slate-700 rounded-l-lg p-3 text-xl font-mono text-center outline-none"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-l-lg p-3 text-xl font-mono text-center outline-none"
                   />
                   <div className="flex flex-col border-l border-slate-700">
-                     <button onClick={() => handleSlideCountChange(slides.length + 1)} className="bg-slate-800 hover:bg-slate-700 p-1 px-3 border-b border-slate-700 rounded-tr-lg transition-colors">+</button>
-                     <button onClick={() => handleSlideCountChange(slides.length - 1)} className="bg-slate-800 hover:bg-slate-700 p-1 px-3 rounded-br-lg transition-colors">-</button>
+                     <button onClick={() => handleSlideCountChange(slides.length + 1)} className="bg-slate-900 hover:bg-slate-800 p-1 px-3 border-b border-slate-700 rounded-tr-lg transition-colors">+</button>
+                     <button onClick={() => handleSlideCountChange(slides.length - 1)} className="bg-slate-900 hover:bg-slate-800 p-1 px-3 rounded-br-lg transition-colors">-</button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <button 
-              onClick={distributeTimeEvenly}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-medium transition-all group"
-            >
-              <RefreshCw className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-500" />
-              Répartir le temps équitablement
-            </button>
-          </div>
-          
-          {/* Right Column: AI Assistant */}
-          <div className="space-y-6 bg-slate-800/50 p-6 rounded-xl border border-slate-700/50">
-             <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-purple-400" /> Assistant IA
-            </h2>
-            <div className="space-y-4">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Sujet de la présentation</label>
-              <textarea
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="Ex: Stratégie Marketing Q4..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none h-24"
-              />
+            <div className="flex flex-col md:flex-row gap-4">
               <button 
-                onClick={handleGenerateAI}
-                disabled={!topic || isGenerating}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                onClick={distributeTimeEvenly}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-medium transition-all group"
               >
-                {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                {isGenerating ? 'Génération...' : 'Générer un plan intelligent'}
+                <RefreshCw className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-500" />
+                Répartir le temps équitablement
+              </button>
+
+              <button
+                onClick={() => setAutoAdvance(!autoAdvance)}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 border rounded-lg text-sm font-medium transition-all ${
+                  autoAdvance 
+                    ? 'bg-blue-600/20 border-blue-500/50 text-blue-300' 
+                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-400'
+                }`}
+              >
+                <Zap className={`w-4 h-4 ${autoAdvance ? 'text-blue-400 fill-current' : ''}`} />
+                {autoAdvance ? 'Mode Auto : Activé' : 'Activer le défilement automatique'}
               </button>
             </div>
-          </div>
+             {autoAdvance && (
+                <p className="text-xs text-blue-400/80 mt-2 text-center">
+                  En mode automatique, les diapositives changent seules pour vous montrer le rythme théorique à suivre.
+                </p>
+              )}
         </div>
 
         {/* Slides List */}
@@ -223,7 +196,7 @@ const SetupView: React.FC<SetupViewProps> = ({ initialSlides, onStart }) => {
         {/* Start Button */}
         <div className="flex justify-center">
            <button 
-             onClick={() => onStart(slides)}
+             onClick={() => onStart(slides, autoAdvance)}
              className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white text-lg font-bold rounded-full shadow-lg shadow-green-900/20 hover:shadow-green-900/40 transform hover:scale-105 transition-all flex items-center gap-3"
            >
              <Play className="w-6 h-6 fill-current" />

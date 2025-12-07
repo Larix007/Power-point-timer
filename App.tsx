@@ -7,6 +7,7 @@ import { DEFAULT_SLIDE_COUNT, DEFAULT_TOTAL_TIME_MINUTES } from './constants';
 const App = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.SETUP);
   const [slides, setSlides] = useState<Slide[]>([]);
+  const [isAutoAdvance, setIsAutoAdvance] = useState(false);
   
   // Initialize default slides for setup if none exist
   useEffect(() => {
@@ -29,8 +30,9 @@ const App = () => {
 
   const timerRef = useRef<number | null>(null);
 
-  const startPresentation = (configuredSlides: Slide[]) => {
+  const startPresentation = (configuredSlides: Slide[], autoAdvance: boolean) => {
     setSlides(configuredSlides);
+    setIsAutoAdvance(autoAdvance);
     setMode(AppMode.RUNNING);
     setState({
       currentSlideIndex: 0,
@@ -76,9 +78,30 @@ const App = () => {
           if (!prev.startTime) return prev;
           const now = Date.now();
           const elapsedMS = now - prev.startTime - prev.totalPausedTime;
+          const elapsedSec = elapsedMS / 1000;
+          
+          let nextIndex = prev.currentSlideIndex;
+
+          if (isAutoAdvance) {
+            // In auto mode, the slide is determined by the elapsed time
+            let accumulated = 0;
+            let found = false;
+            for(let i = 0; i < slides.length; i++) {
+              accumulated += slides[i].durationSeconds;
+              if (elapsedSec < accumulated) {
+                nextIndex = i;
+                found = true;
+                break;
+              }
+            }
+            // If we exceeded total time, stay on last slide
+            if (!found) nextIndex = slides.length - 1;
+          }
+
           return {
             ...prev,
-            elapsedGlobalTime: elapsedMS / 1000
+            elapsedGlobalTime: elapsedSec,
+            currentSlideIndex: nextIndex
           };
         });
       }, 200);
@@ -88,7 +111,7 @@ const App = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [mode]);
+  }, [mode, slides, isAutoAdvance]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-500/30">
@@ -103,6 +126,7 @@ const App = () => {
           onTogglePause={togglePause}
           onStop={stopPresentation}
           onChangeSlide={changeSlide}
+          isAutoAdvance={isAutoAdvance}
         />
       )}
     </div>
