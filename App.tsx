@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Slide, AppMode, PresentationState } from './types';
-import SetupView from './components/SetupView';
-import RunningView from './components/RunningView';
+import SetupView from './components/SetupView.tsx';
+import RunningView from './components/RunningView.tsx';
 import { DEFAULT_SLIDE_COUNT, DEFAULT_TOTAL_TIME_MINUTES } from './constants';
 
 const App = () => {

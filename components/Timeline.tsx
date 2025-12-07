@@ -17,7 +17,11 @@ const Timeline: React.FC<TimelineProps> = ({
   // Calculate marker positions (cumulative percentage)
   const slideMarkers = useMemo(() => {
     let accumulatedTime = 0;
+    // Guard against undefined slides
+    if (!slides) return [];
+    
     return slides.map((slide) => {
+      if (!slide) return null;
       const start = accumulatedTime;
       accumulatedTime += slide.durationSeconds;
       return {
@@ -26,11 +30,13 @@ const Timeline: React.FC<TimelineProps> = ({
         widthPct: (slide.durationSeconds / totalDuration) * 100,
         endPct: (accumulatedTime / totalDuration) * 100,
       };
-    });
+    }).filter((s): s is NonNullable<typeof s> => s !== null);
   }, [slides, totalDuration]);
 
   // Cap the progress cursor at 100%
-  const currentProgressPct = Math.min((globalElapsedTime / totalDuration) * 100, 100);
+  const currentProgressPct = totalDuration > 0 
+    ? Math.min((globalElapsedTime / totalDuration) * 100, 100)
+    : 0;
 
   return (
     <div className="w-full mt-4">

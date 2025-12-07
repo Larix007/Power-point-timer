@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Slide, PresentationState, AppMode } from '../types';
-import Timeline from './Timeline';
-import TimerDisplay from './TimerDisplay';
+import Timeline from './Timeline.tsx';
+import TimerDisplay from './TimerDisplay.tsx';
 import { Pause, Play, SkipBack, SkipForward, Square, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
 
 interface RunningViewProps {
